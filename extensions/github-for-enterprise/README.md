@@ -41,6 +41,11 @@ This extension brings GitHub Enterprise support to Raycast through the use of Gr
   - `repo`
   - `user`
   - `write:discussion`
+
+  optional, if you want to use notifications command and menu bar icon
+  - `read:org`
+  - `read:project`
+
 - Click `Generate token` and save this value somewhere. **You'll only be able to see this once**.
 
 > Future updates to this extension will offer more functionality that may require additional scopes be defined in this token.
@@ -58,3 +63,8 @@ When launching a command, you'll be presented with a configuration screen asking
 ![Configuration](https://user-images.githubusercontent.com/6590356/140934002-081ed77e-6fe2-4b5a-aadc-feb662db6407.png)
 
 Once this information has been filled in, you should have access to manage your issues and pull requests.
+
+### Unsafe HTTPS
+
+In the event your GitHub enterprise server has a self-hosted certificate, this extension may not work right away. Try enabling "unsafe HTTPS" if
+everything else looks correct.

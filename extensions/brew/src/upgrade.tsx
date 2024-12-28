@@ -1,14 +1,15 @@
-import { showToast, ToastStyle } from "@raycast/api";
-import { showFailureToast } from "./utils";
-import { brewUpgradeCommand } from "./brew";
+import { showToast, Toast } from "@raycast/api";
+import { brewUpgradeAll } from "./brew";
 import { preferences } from "./preferences";
+import { showActionToast, showFailureToast, wait } from "./utils";
 
-export default async () => {
+export default async (): Promise<void> => {
   try {
-    showToast(ToastStyle.Animated, "Upgrading formula & casks" + String.ellipsis);
-    await brewUpgradeCommand(preferences.greedyUpgrades);
-    showToast(ToastStyle.Success, "Upgrade completed");
+    const abort = showActionToast({ title: "Upgrading formula & casks" + String.ellipsis, cancelable: true });
+    await brewUpgradeAll(preferences.greedyUpgrades, abort);
+    showToast(Toast.Style.Success, "Upgrade completed");
   } catch (err) {
-    showFailureToast("Upgrade failed", err);
+    await showFailureToast("Upgrade failed", err as Error);
+    await wait(3000);
   }
 };

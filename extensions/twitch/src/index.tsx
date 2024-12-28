@@ -1,79 +1,49 @@
-import {
-  ActionPanel,
-  confirmAlert,
-  Detail,
-  getPreferenceValues,
-  ImageMask,
-  List,
-  ListItem,
-  OpenAction,
-  showHUD,
-  showToast,
-  ToastStyle,
-} from "@raycast/api";
-import React from "react";
-import fetch from "node-fetch";
-
-import Item from "./interfaces/Item";
-import { Preferences } from "./interfaces/Preferences";
-import Action from "./utils";
+import { Image, List } from "@raycast/api";
+import { useState } from "react";
+import { action } from "./helpers/action";
+import useLiveChannels from "./helpers/useLiveChannels";
+import { CACHE_PREFIX } from "./helpers/cache";
+import { useCachedState, useFrecencySorting } from "@raycast/utils";
+import StreamerItem from "./interfaces/FollowingItem";
 
 export default function main() {
-  const preferences: Preferences = getPreferenceValues();
-  const clientId = preferences.clientId;
-  const authorization = preferences.authorization;
+  const [query, setQuery] = useState<string>("");
+  const [searchHistory, setSearchHistory] = useCachedState<StreamerItem[]>(
+    `${CACHE_PREFIX}_streamer_search_history`,
+    [],
+  );
 
-  const [loading, setLoading] = React.useState(false);
-  const [query, setQuery] = React.useState<string>("");
-  const [items, setItems] = React.useState<Item[]>([]);
+  const { data: searchItems, isLoading } = useLiveChannels(query);
 
-  React.useEffect(() => {
-    if (query.length == 0) return;
-    setLoading(true);
+  const { data: sortedItems, visitItem } = useFrecencySorting(query ? searchItems : searchHistory, {
+    key: (item) => item.id,
+  });
 
-    fetch(`https://api.twitch.tv/helix/search/channels?query=${query}&live_only=true`, {
-      headers: {
-        "Client-Id": clientId,
-        Authorization: `Bearer ${authorization}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data: any) => {
-        if (data && data.data) {
-          setItems(data.data);
-          setLoading(false);
-        } else if (data.error && data.error.toLowerCase().includes("invalid")) {
-          showToast(ToastStyle.Failure, data.message);
-        }
-      });
-  }, [query]);
+  const onAction = (item: StreamerItem) => {
+    visitItem(item);
+    if (!searchHistory.some((game) => game.id === item.id)) {
+      setSearchHistory([...searchHistory, item]);
+    }
+  };
 
   return (
-    <>
-      <List
-        isLoading={loading}
-        searchBarPlaceholder="Search for a Streamer on Twitch"
-        navigationTitle="Search a Channel"
-        onSearchTextChange={(text) => setQuery(text)}
-      >
-        {items.map((item: Item) => {
-          return (
-            <ListItem
-              key={item.id}
-              icon={{ source: item.thumbnail_url, mask: ImageMask.Circle }}
-              accessoryIcon={{
-                tintColor: item.is_live ? "green" : "red",
-                source: item.is_live ? "checkmark-circle-16" : "xmark-circle-16",
-              }}
-              accessoryTitle={`${item.is_live ? item.game_name : "Offline"}`}
-              id={item.id}
-              title={item.title}
-              subtitle={item.display_name}
-              actions={<Action live={item.is_live} name={item.broadcaster_login} />}
-            />
-          );
-        })}
-      </List>
-    </>
+    <List
+      isLoading={isLoading}
+      searchBarPlaceholder="Search for a streamer..."
+      onSearchTextChange={(text) => setQuery(text)}
+    >
+      {sortedItems.map((item) => {
+        return (
+          <List.Item
+            key={item.id}
+            icon={{ source: item.thumbnail_url, mask: Image.Mask.Circle }}
+            id={item.id}
+            title={item.title}
+            subtitle={item.display_name}
+            actions={action(item.broadcaster_login, item.is_live || false, () => onAction(item))}
+          />
+        );
+      })}
+    </List>
   );
 }

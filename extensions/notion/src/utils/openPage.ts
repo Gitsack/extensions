@@ -1,21 +1,27 @@
-import { closeMainWindow, getPreferenceValues, getApplications } from "@raycast/api";
-import { Page } from "./notion";
-import { storeRecentlyOpenedPage } from "./local-storage";
-import open from "open";
+import { closeMainWindow, getPreferenceValues, getApplications, open } from "@raycast/api";
 
-export async function handleOnOpenPage(page: Page): Promise<void> {
-  if (!page.url) {
-    return;
-  }
-  const openIn = getPreferenceValues().open_in;
-  let isNotionInstalled;
-  if (!openIn || openIn === "app") {
-    const installedApplications = await getApplications();
-    isNotionInstalled = installedApplications.some(function (app) {
-      return app.bundleId === "notion.id";
-    });
-  }
-  open(isNotionInstalled ? page.url.replace("https", "notion") : page.url);
-  await storeRecentlyOpenedPage(page);
+import { Page } from "./notion/page";
+
+const open_in = getPreferenceValues<Preferences>().open_in;
+
+let hasCheckedDefault = false;
+export async function checkedDefaultOpenMethod() {
+  if (hasCheckedDefault) return;
+  hasCheckedDefault = true;
+  const apps = await getApplications();
+  const defaultApp = apps.find((app) => app.name === "Notion");
+  if (defaultApp) return defaultApp;
+  return open_in;
+}
+
+export async function handleOnOpenPage(page: Page, setRecentPage: (page: Page) => Promise<void>): Promise<void> {
+  if (!page.url) return;
+  await checkedDefaultOpenMethod();
+  open(page.url, open_in);
+  await setRecentPage(page);
   closeMainWindow();
+}
+
+export function urlForPreferredMethod(url: string) {
+  return open_in?.name === "Notion" ? url.replace("https", "notion") : url;
 }

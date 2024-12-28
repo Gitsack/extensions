@@ -1,40 +1,22 @@
-import { Color, Icon, List, ListSection } from "@raycast/api";
-import { useEffect, useState } from "react";
-import { showFailureToast } from "./utils";
+import { Color, Icon, List } from "@raycast/api";
+import { useCachedPromise } from "@raycast/utils";
+import { useState } from "react";
 import { OutdatedResults, OutdatedCask, OutdatedFormula, brewFetchOutdated } from "./brew";
 import { OutdatedActionPanel } from "./components/actionPanels";
+import { InstallableFilterDropdown, InstallableFilterType, placeholder } from "./components/filter";
 import { preferences } from "./preferences";
 
-interface State {
-  outdated?: OutdatedResults;
-  isLoading: boolean;
-}
-
-export default function Main() {
-  const [state, setState] = useState<State>({ isLoading: true });
-
-  useEffect(() => {
-    if (!state.isLoading) {
-      return;
-    }
-    brewFetchOutdated(preferences.greedyUpgrades)
-      .then((outdated) => {
-        setState({ outdated: outdated, isLoading: false });
-      })
-      .catch((err) => {
-        console.log("brewFetchOutdated error:", err);
-        showFailureToast("Brew outdated failed", err);
-        setState({ isLoading: false });
-      });
-  }, [state]);
+export default function Main(): JSX.Element {
+  const [filter, setFilter] = useState(InstallableFilterType.all);
+  const { isLoading, data, revalidate } = useCachedPromise(() => brewFetchOutdated(preferences.greedyUpgrades));
 
   return (
     <OutdatedList
-      outdated={state.outdated}
-      isLoading={state.isLoading}
-      onAction={() => {
-        setState((oldState) => ({ ...oldState, isLoading: true }));
-      }}
+      outdated={data}
+      isLoading={isLoading}
+      filterType={filter}
+      searchBarAccessory={<InstallableFilterDropdown onSelect={setFilter} />}
+      onAction={() => revalidate()}
     />
   );
 }
@@ -47,7 +29,7 @@ function OutdatedCaskListItem(props: { outdated: OutdatedCask; onAction: () => v
     <List.Item
       id={outdated.name}
       title={outdated.name}
-      accessoryTitle={version}
+      accessories={[{ text: version }]}
       icon={{ source: Icon.Checkmark, tintColor: Color.Red }}
       actions={<OutdatedActionPanel outdated={outdated} onAction={props.onAction} />}
     />
@@ -66,29 +48,41 @@ function OutdatedFormulaeListItem(props: { outdated: OutdatedFormula; onAction: 
       id={outdated.name}
       title={outdated.name}
       subtitle={outdated.pinned ? "Pinned" : ""}
-      accessoryTitle={version}
+      accessories={[{ text: version }]}
       icon={{ source: Icon.Checkmark, tintColor: Color.Red }}
       actions={<OutdatedActionPanel outdated={outdated} onAction={props.onAction} />}
     />
   );
 }
 
-function OutdatedList(props: { outdated?: OutdatedResults; isLoading: boolean; onAction: () => void }) {
-  const formulae = props.outdated?.formulae ?? [];
-  const casks = props.outdated?.casks ?? [];
+interface OutdatedListProps {
+  outdated?: OutdatedResults;
+  isLoading: boolean;
+  searchBarAccessory?: JSX.Element;
+  filterType: InstallableFilterType;
+  onAction: () => void;
+}
+
+function OutdatedList(props: OutdatedListProps) {
+  const formulae = props.filterType != InstallableFilterType.casks ? (props.outdated?.formulae ?? []) : [];
+  const casks = props.filterType != InstallableFilterType.formulae ? (props.outdated?.casks ?? []) : [];
 
   return (
-    <List searchBarPlaceholder={"Filter formulae by name" + String.ellipsis} isLoading={props.isLoading}>
-      <ListSection title="Formulae">
+    <List
+      searchBarPlaceholder={placeholder(props.filterType)}
+      searchBarAccessory={props.searchBarAccessory}
+      isLoading={props.isLoading}
+    >
+      <List.Section title="Formulae">
         {formulae.map((formula) => (
           <OutdatedFormulaeListItem key={formula.name} outdated={formula} onAction={props.onAction} />
         ))}
-      </ListSection>
-      <ListSection title="Casks">
+      </List.Section>
+      <List.Section title="Casks">
         {casks.map((cask) => (
           <OutdatedCaskListItem key={cask.name} outdated={cask} onAction={props.onAction} />
         ))}
-      </ListSection>
+      </List.Section>
     </List>
   );
 }

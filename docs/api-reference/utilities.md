@@ -1,36 +1,54 @@
-# Utilities
+# System Utilities
 
-This list of Utility APIs make your life easier as a developer. They also expose some of Raycast's native functionality to allow deep integration into the user's setup. For example, you can use the Application APIs to check if a desktop application is installed and then provide an action to deeplink into it.
+This set of utilities exposes some of Raycast's native functionality to allow deep integration into the user's setup. For example, you can use the Application APIs to check if a desktop application is installed and then provide an action to deep-link into it.
 
 ## API Reference
 
 ### getApplications
 
-Returns all applications that can open the file.
+Returns all applications that can open the file or URL.
 
 #### Signature
 
 ```typescript
-async function getApplications(path: PathLike): Promise<Application[]>
+async function getApplications(path?: PathLike): Promise<Application[]>;
 ```
 
 #### Example
 
+{% tabs %}
+{% tab title="Find Application" %}
+
+```typescript
+import { getApplications, Application } from "@raycast/api";
+
+// it is a lot more reliable to get an app by its bundle ID than its path
+async function findApplication(bundleId: string): Application | undefined {
+  const installedApplications = await getApplications();
+  return installedApplications.filter((application) => application.bundleId == bundleId);
+}
+```
+
+{% endtab %}
+
+{% tab title="List Installed Applications" %}
+
 ```typescript
 import { getApplications } from "@raycast/api";
 
-export default async () => {
+export default async function Command() {
   const installedApplications = await getApplications();
   console.log("The following applications are installed on your Mac:");
   console.log(installedApplications.map((a) => a.name).join(", "));
-};
+}
 ```
+
+{% endtab %}
+{% endtabs %}
 
 #### Parameters
 
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| path | <code>PathLike</code> | No | The path of the file or folder to get the applications for. If no path is specified, all installed applications are returned. |
+<FunctionParametersTableFromJSDoc name="getApplications" />
 
 #### Return
 
@@ -38,12 +56,12 @@ An array of [Application](#application).
 
 ### getDefaultApplication
 
-Returns the default application that the file would be opened with.
+Returns the default application that the file or URL would be opened with.
 
 #### Signature
 
 ```typescript
-async function getDefaultApplication(path: PathLike): Promise<Application>
+async function getDefaultApplication(path: PathLike): Promise<Application>;
 ```
 
 #### Example
@@ -51,52 +69,44 @@ async function getDefaultApplication(path: PathLike): Promise<Application>
 ```typescript
 import { getDefaultApplication } from "@raycast/api";
 
-export default async () => {
+export default async function Command() {
   const defaultApplication = await getDefaultApplication(__filename);
   console.log(`Default application for JavaScript is: ${defaultApplication.name}`);
-};
+}
 ```
 
 #### Parameters
 
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| path | <code>PathLike</code> | Yes | The path of the file or folder to get the default application for. |
+<FunctionParametersTableFromJSDoc name="getDefaultApplication" />
 
 #### Return
 
-The default [Application](#application) that would open the file. Throws an error if no application was found.
+A Promise that resolves with the default [Application](#application) that would open the file or URL. If no application was found, the promise will be rejected.
 
-### randomId
+### getFrontmostApplication
 
-Generate secure URL-friendly unique ID.
+Returns the frontmost application.
 
 #### Signature
 
 ```typescript
-function randomId(size: number): string
+async function getFrontmostApplication(): Promise<Application>;
 ```
 
 #### Example
 
 ```typescript
-import { pasteText, randomId } from "@raycast/api";
+import { getFrontmostApplication } from "@raycast/api";
 
-export default async () => {
-  const id = randomId();
-  await pasteText(id);
+export default async function Command() => {
+  const frontmostApplication = await getFrontmostApplication();
+  console.log(`The frontmost application is: ${frontmostApplication.name}`);
 };
 ```
 
-#### Parameters
-
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| size | <code>number</code> | No | Size of the ID. The default size is 21. |
-
 #### Return
 
-A random string.
+A Promise that resolves with the frontmost [Application](#application). If no application was found, the promise will be rejected.
 
 ### showInFinder
 
@@ -105,35 +115,37 @@ Shows a file or directory in the Finder.
 #### Signature
 
 ```typescript
-async function showInFinder(path: PathLike): Promise<void>
+async function showInFinder(path: PathLike): Promise<void>;
 ```
 
 #### Example
 
 ```typescript
-import { showInFinder } from "@raycast/api"
-import { homedir } from "os"
-showInFinder(homedir(), "Downloads")
+import { showInFinder } from "@raycast/api";
+import { homedir } from "os";
+import { join } from "path";
+
+export default async function Command() {
+  await showInFinder(join(homedir(), "Downloads"));
+}
 ```
 
 #### Parameters
 
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| path | <code>PathLike</code> | Yes | The path to show in the Finder. |
+<FunctionParametersTableFromJSDoc name="showInFinder" />
 
 #### Return
 
-A promise that resolves when item is revealed in the Finder.
+A Promise that resolves when the item is revealed in the Finder.
 
 ### trash
 
-Moves a file or director to the Trash.
+Moves a file or directory to the Trash.
 
 #### Signature
 
 ```typescript
-async function trash(path: PathLike | PathLike[]): Promise<void>
+async function trash(path: PathLike | PathLike[]): Promise<void>;
 ```
 
 #### Example
@@ -142,23 +154,87 @@ async function trash(path: PathLike | PathLike[]): Promise<void>
 import { trash } from "@raycast/api";
 import { writeFile } from "fs/promises";
 import { homedir } from "os";
+import { join } from "path";
 
-export default async () => {
-  const file = `${homedir()}/Desktop/yolo.txt`;
+export default async function Command() {
+  const file = join(homedir(), "Desktop", "yolo.txt");
   await writeFile(file, "I will be deleted soon!");
   await trash(file);
-};
+}
 ```
 
 #### Parameters
 
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| path | <code>PathLike</code> or <code>PathLike[]</code> | Yes |  |
+<FunctionParametersTableFromJSDoc name="trash" />
 
 #### Return
 
-A promise that resolves when all files are moved to the trash.
+A Promise that resolves when all files are moved to the trash.
+
+### open
+
+Opens a target with the default application or specified application.
+
+#### Signature
+
+```typescript
+async function open(target: string, application?: Application | string): Promise<void>;
+```
+
+#### Example
+
+```typescript
+import { open } from "@raycast/api";
+
+export default async function Command() {
+  await open("https://www.raycast.com", "com.google.Chrome");
+}
+```
+
+#### Parameters
+
+<FunctionParametersTableFromJSDoc name="open" />
+
+#### Return
+
+A Promise that resolves when the target has been opened.
+
+### captureException
+
+Report the provided exception to the Developer Hub.
+This helps in handling failures gracefully while staying informed about the occurrence of the failure.
+
+#### Signature
+
+```typescript
+function captureException(exception: unknown): void;
+```
+
+#### Example
+
+```typescript
+import { open, captureException, showToast, Toast } from "@raycast/api";
+
+export default async function Command() {
+  const url = "https://www.raycast.com";
+  const app = "Google Chrome";
+  try {
+    await open(url, app);
+  } catch (e: unknown) {
+    captureException(e);
+    await showToast({
+      style: Toast.Style.Failure,
+      title: `Could not open ${url} in ${app}.`,
+    });
+  }
+}
+```
+
+#### Parameters
+
+<FunctionParametersTableFromJSDoc name="open" />
+
+## Types
 
 ### Application
 
@@ -169,8 +245,12 @@ It can be used to open files or folders in a specific application. Use [getAppli
 
 #### Properties
 
-| Name | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| bundleId | <code>string</code> | No | The bundle identifier of the application, e.g. `com.raycast.macos`. |
-| name | <code>string</code> | Yes | The display name of the application. |
-| path | <code>string</code> | Yes | The absolute path to the application bundle, e.g. `/Applications/Raycast.app`, |
+<InterfaceTableFromJSDoc name="Application" />
+
+### PathLike
+
+```typescript
+PathLike: string | Buffer | URL;
+```
+
+Supported path types.

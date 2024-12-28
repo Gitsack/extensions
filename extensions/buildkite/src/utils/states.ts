@@ -1,18 +1,7 @@
 import { Color, Icon, Image } from "@raycast/api";
+import { BuildStates } from "../generated/graphql";
 
-export type State =
-  | "SKIPPED"
-  | "CREATING"
-  | "SCHEDULED"
-  | "RUNNING"
-  | "PASSED"
-  | "FAILED"
-  | "CANCELING"
-  | "CANCELED"
-  | "BLOCKED"
-  | "NOT_RUN";
-
-export function getStateIcon(state: State): Image | undefined {
+export function getStateIcon(state: BuildStates | undefined): Image.ImageLike | undefined {
   switch (state) {
     case "CREATING":
     case "RUNNING":
@@ -25,6 +14,10 @@ export function getStateIcon(state: State): Image | undefined {
     case "CANCELED":
     case "CANCELING":
     case "FAILED":
-      return { tintColor: Color.Red, source: Icon.XmarkCircle };
+      return { tintColor: Color.Red, source: Icon.XMarkCircle };
+
+    case "SCHEDULED":
+    default:
+      return Icon.Circle;
   }
 }

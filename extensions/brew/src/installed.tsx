@@ -1,44 +1,41 @@
-import { useEffect, useState } from "react";
-import { showFailureToast } from "./utils";
-import { InstallableResults, brewFetchInstalled } from "./brew";
+import { useState } from "react";
+import { useCachedPromise } from "@raycast/utils";
+import { brewFetchInstalled, Cask, Formula } from "./brew";
 import { FormulaList } from "./components/list";
+import { InstallableFilterDropdown, InstallableFilterType, placeholder } from "./components/filter";
 
-interface State {
-  results?: InstallableResults;
-  isLoading: boolean;
-}
+export default function Main(): JSX.Element {
+  const [filter, setFilter] = useState(InstallableFilterType.all);
+  const { isLoading, data: installed, revalidate } = useCachedPromise(() => brewFetchInstalled(true));
 
-export default function Main() {
-  const [state, setState] = useState<State>({ isLoading: true });
+  let formulae: Formula[] = [];
+  if (filter != InstallableFilterType.casks && installed?.formulae instanceof Map) {
+    formulae = Array.from(installed.formulae.values());
+  }
+  let casks: Cask[] = [];
+  if (filter != InstallableFilterType.formulae && installed?.casks instanceof Map) {
+    casks = Array.from(installed.casks.values());
+  }
 
-  useEffect(() => {
-    if (!state.isLoading) {
-      return;
+  const isInstalled = (name: string) => {
+    if (!installed) {
+      return false;
     }
-
-    brewFetchInstalled(true)
-      .then((results) => {
-        setState({ results: results, isLoading: false });
-      })
-      .catch((err) => {
-        console.log("brewFetchInstalled error:", err);
-        showFailureToast("Brew list failed", err);
-        setState({ isLoading: false });
-      });
-  }, [state]);
-
-  const formulae = state.results?.formulae ?? [];
-  const casks = state.results?.casks ?? [];
+    return (
+      (installed.formulae instanceof Map && installed.formulae.get(name) != undefined) ||
+      (installed.casks instanceof Map && installed.casks.get(name) != undefined)
+    );
+  };
 
   return (
     <FormulaList
       formulae={formulae}
       casks={casks}
-      searchBarPlaceholder="Filter results by name"
-      isLoading={state.isLoading}
-      onAction={() => {
-        setState((oldState) => ({ ...oldState, isLoading: true }));
-      }}
+      searchBarPlaceholder={placeholder(filter)}
+      searchBarAccessory={<InstallableFilterDropdown onSelect={setFilter} />}
+      isLoading={isLoading}
+      isInstalled={isInstalled}
+      onAction={() => revalidate()}
     />
   );
 }

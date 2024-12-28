@@ -1,46 +1,22 @@
-## Setup Extension
+# Notion
 
-### Create Notion Integration
+The fastest way to search and create Notion pages.
 
-Go to [Notion > My Integrations](https://www.notion.so/my-integrations) and create a new integration.
+## Using internal integration
 
-1️⃣ Give it a name, 2️⃣ select the Notion workspace you want to access from Raycast and 3️⃣ submit it.
+If you are not logging in through OAuth, you can still use the extension with an internal integration secret. Follow the steps below to do so:
 
-<img width="1680" alt="Screenshot 2021-11-06 at 09 48 32" src="https://user-images.githubusercontent.com/18643714/140604550-f05036af-7db0-436a-82fb-5b16bf04e0e5.png">
+1. Create a new integration over [here](https://www.notion.so/my-integrations)
+2. Copy the `Internal Integration Secret` (under `Secrets`)
+3. Manually give the integration access to the specific pages or databases by [adding connections to them](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages)
 
-### Copy Notion Token
 
-Once saved, copy the `secret_xxxxx` token and save it in Raycast extension's preference under `Notion Token`.
+## I can't find the Notion page or database from Raycast
 
-<img width="1680" alt="Screenshot 2021-11-06 at 09 50 21" src="https://user-images.githubusercontent.com/18643714/140604577-9e64459f-12be-4a2c-9283-3fbddb8cdbfb.png">
+If you have connected your Notion account to Raycast, you need to grant the Raycast Extension access to new root pages.
 
-### Share Database
+To do so, open `Settings & Members`. Then, in the `My Connections` section, click the three dots next to the Raycast Extension, and hover over the "Access Selected Pages" menu item. You will be able to grant access to new pages.
 
-Now go into your workspace, find a database you want to use with Raycast and `Share` this database with your newly created Notion integration.
+![Raycast extension access](./media/raycast-extension-access.png)
 
-<img width="1680" alt="Screenshot 2021-11-06 at 09 54 13" src="https://user-images.githubusercontent.com/18643714/140604616-23b7e76f-2023-41fa-a60f-e24a6cd5ed24.png">
-
-You're all set 🙌
-Go back to Raycast to start using the extension.
-
-## Create Database Item
-
-![raycast-notion-create-database-item-banner.png](screenshots/raycast-notion-create-database-item-banner.png)
-
-From Raycast, type `Create Database Item` to load the command and select a database.
-
-All editable fields will be retrieved from this database.
-
-As of today, here are the compatible properties:
-
-- ✏️ Text
-- 📞 Phone number
-- ✉️ Email
-- 🔢 Number
-- 🔻 Select
-- 🏷 Multi-select
-
-And coming soon:
-
-- 👥 People
-- 🔀 Database relations
+If you are unable to do so or if you used an internal integration secret, you can follow the steps on the page: [Add connections to pages](https://www.notion.so/help/add-and-manage-connections-with-the-api#add-connections-to-pages).

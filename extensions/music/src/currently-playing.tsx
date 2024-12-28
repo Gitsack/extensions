@@ -1,14 +1,13 @@
-import { showToast, ToastStyle } from "@raycast/api";
-import { isLeft } from "fp-ts/lib/Either";
-import { getCurrentTrack } from "./util/controls";
+import { updateCommandMetadata } from "@raycast/api";
+import { pipe } from "fp-ts/lib/function";
+import * as TE from "fp-ts/TaskEither";
+
+import * as music from "./util/scripts";
 
 export default async () => {
-  const track = await getCurrentTrack()();
-
-  if (isLeft(track)) {
-    showToast(ToastStyle.Failure, "Could not get currently playing track");
-    return;
-  }
-
-  showToast(ToastStyle.Success, track.right.name, `${track.right.album} - ${track.right.artist}`);
+  await pipe(
+    music.currentTrack.getCurrentTrack(),
+    TE.map((track) => updateCommandMetadata({ subtitle: `${track.name} - ${track.artist}` })),
+    TE.mapLeft(() => updateCommandMetadata({ subtitle: "Could not get currently playing track" }))
+  )();
 };
