@@ -1,5 +1,20 @@
 # Image Modification Changelog
 
+## [✨ AI Enhancements] - 2025-02-21
+
+- Add AI tool support for all image operations
+
+## [Bug Fixes & New Filters] - 2025-01-30
+
+- Improved memory management when previewing filters, reducing the likelihood of out-of-memory errors
+- Added setting to disable live filter previews
+- Added setting to hide specific filters/filter categories from the filter list
+- Added 28 new filters
+
+## [Fix WebP optimization] - 2025-01-29
+
+- Fixed the cwebp path being incorrectly set when Optimizing WebP images
+
 ## [Fix avifenc Installation] - 2024-09-11
 
 - Fixed an issue where the `avifenc` and `avifdec` binaries were not being installed correctly
